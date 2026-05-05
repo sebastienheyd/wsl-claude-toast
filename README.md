@@ -5,6 +5,8 @@ Native Windows Toast notifications from WSL, designed for
 as a standalone CLI). Single self-contained Rust binary, no Python or
 PowerShell dependency required at the project level.
 
+![Toast notification example](assets/screenshot-toast.png)
+
 ## Features
 
 - Modern Windows toasts via
