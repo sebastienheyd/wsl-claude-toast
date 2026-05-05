@@ -43,9 +43,15 @@ Detects your CPU architecture, downloads the matching pre-built binary from
 the latest GitHub release, places it in `~/.claude/bin/`, and runs
 `--install-hook`. No Rust toolchain required.
 
+With `wget` :
+
 ```bash
 wget -qO- https://raw.githubusercontent.com/sebastienheyd/wsl-claude-toast/main/install.sh | bash
-# or
+```
+
+Or with `curl` :
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/sebastienheyd/wsl-claude-toast/main/install.sh | bash
 ```
 
