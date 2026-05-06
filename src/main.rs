@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::OnceLock;
@@ -455,6 +455,27 @@ fn parse_hook_input() -> Result<Option<HookPayload>, String> {
         icon: icon.to_string(),
         footer,
     }))
+}
+
+fn icon_emoji(icon: &str) -> &'static str {
+    match icon {
+        "permission" => "\u{1F510}",
+        "stop" => "\u{2705}",
+        "question" => "\u{2753}",
+        _ => "\u{1F4AC}",
+    }
+}
+
+fn set_terminal_title(title: &str) {
+    if std::env::var_os("WCT_NO_TAB_TITLE").is_some() {
+        return;
+    }
+    let Ok(mut tty) = std::fs::OpenOptions::new().write(true).open("/dev/tty") else {
+        return;
+    };
+    let safe: String = title.chars().filter(|c| *c != '\x07' && *c != '\x1b').collect();
+    let _ = write!(tty, "\x1b]0;{safe}\x1b\\");
+    let _ = tty.flush();
 }
 
 fn run_powershell(script: &str) -> Result<String, String> {
@@ -1103,6 +1124,13 @@ fn main() {
             Ok(None) => return,
             Err(e) => die(e),
         };
+        let tab_icon = args.icon.clone().unwrap_or_else(|| payload.icon.clone());
+        let mut tab_title = format!("{} {}", icon_emoji(&tab_icon), payload.title);
+        if !payload.footer.is_empty() {
+            tab_title.push_str(" | ");
+            tab_title.push_str(&payload.footer);
+        }
+        set_terminal_title(&tab_title);
         (
             payload.title,
             payload.message,

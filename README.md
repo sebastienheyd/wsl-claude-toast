@@ -23,6 +23,12 @@ PowerShell dependency required at the project level.
 - `--hook` mode: reads the Claude Code JSON event from stdin and
   automatically derives title, message, icon and footer (git repo name
   when available, otherwise the full `cwd`).
+- **Terminal tab renaming**: in `--hook` mode the binary also rewrites
+  the hosting terminal tab title (Windows Terminal / PowerShell /
+  any OSC-0 capable emulator) to `<emoji> <project>` — 🔐 for
+  permission prompts, ✅ for `Stop`, 💬 otherwise. Makes it obvious
+  which tab needs attention when several Claude Code sessions are
+  running side by side. Set `WCT_NO_TAB_TITLE=1` to opt out.
 - Idempotent install/uninstall of the hook in
   `~/.claude/settings.json` (`--install-hook` / `--uninstall-hook`).
 - **Localized output** (toasts + CLI messages) in 5 languages: English,
@@ -168,6 +174,12 @@ The footer is computed from `cwd`:
 1. If `cwd` lives inside a git repository → `basename` of the git root
    (`git rev-parse --show-toplevel`).
 2. Otherwise → the full `cwd` path.
+
+The same project label is reused to rewrite the hosting tab title via
+an OSC 0 escape sequence written to `/dev/tty`, prefixed with an
+emoji that mirrors the toast icon: 🔐 (permission), ✅ (stop) or
+💬 (default). Set `WCT_NO_TAB_TITLE=1` in `~/.claude/settings.json`
+(`env` block) to disable this behaviour while keeping the toast.
 
 ## Architecture
 
