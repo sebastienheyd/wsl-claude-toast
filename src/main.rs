@@ -368,7 +368,16 @@ fn git_project_name(cwd: &str) -> Option<String> {
         .map(|s| s.to_string_lossy().into_owned())
 }
 
-fn parse_hook_input() -> Result<HookPayload, String> {
+fn is_generic_claude_message(message: &str) -> bool {
+    matches!(
+        message.to_ascii_lowercase().as_str(),
+        "claude code needs your attention"
+            | "claude is waiting for your input"
+            | "claude code is waiting for your input"
+    )
+}
+
+fn parse_hook_input() -> Result<Option<HookPayload>, String> {
     let mut buf = String::new();
     io::stdin()
         .read_to_string(&mut buf)
@@ -385,11 +394,20 @@ fn parse_hook_input() -> Result<HookPayload, String> {
         .get("notification_type")
         .and_then(Value::as_str)
         .unwrap_or("");
+
+    if notif_type == "auth_success" {
+        return Ok(None);
+    }
+
     let mut message = json
         .get("message")
         .and_then(Value::as_str)
         .unwrap_or("")
+        .trim()
         .to_string();
+    if is_generic_claude_message(&message) {
+        message.clear();
+    }
     let cwd = json.get("cwd").and_then(Value::as_str).unwrap_or("");
 
     let (title, icon, default_msg) = if notif_type == "permission_prompt" {
@@ -397,6 +415,12 @@ fn parse_hook_input() -> Result<HookPayload, String> {
             t("toast.permission.title"),
             "permission",
             t("toast.permission.default_msg"),
+        )
+    } else if notif_type == "elicitation_dialog" {
+        (
+            t("toast.question.title"),
+            "question",
+            t("toast.question.default_msg"),
         )
     } else if event == "Stop" {
         (t("toast.stop.title"), "stop", t("toast.stop.default_msg"))
@@ -425,12 +449,12 @@ fn parse_hook_input() -> Result<HookPayload, String> {
         }
     };
 
-    Ok(HookPayload {
+    Ok(Some(HookPayload {
         title: title.to_string(),
         message,
         icon: icon.to_string(),
         footer,
-    })
+    }))
 }
 
 fn run_powershell(script: &str) -> Result<String, String> {
@@ -911,12 +935,7 @@ fn install_hook() -> Result<(), String> {
     }
 
     let added_stop = ensure_event_hook(hooks_root, "Stop", None, &command);
-    let added_notif = ensure_event_hook(
-        hooks_root,
-        "Notification",
-        Some("permission_prompt"),
-        &command,
-    );
+    let added_notif = ensure_event_hook(hooks_root, "Notification", None, &command);
 
     if !added_stop && !added_notif {
         println!("{}", tf("cli.hook.already", &[("path", &path_str)]));
@@ -1079,7 +1098,11 @@ fn main() {
     }
 
     let (raw_title, raw_message, raw_icon, raw_footer) = if args.hook {
-        let payload = parse_hook_input().unwrap_or_else(|e| die(e));
+        let payload = match parse_hook_input() {
+            Ok(Some(p)) => p,
+            Ok(None) => return,
+            Err(e) => die(e),
+        };
         (
             payload.title,
             payload.message,
