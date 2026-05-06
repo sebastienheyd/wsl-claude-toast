@@ -405,6 +405,10 @@ fn parse_hook_input() -> Result<Option<HookPayload>, String> {
         .unwrap_or("")
         .trim()
         .to_string();
+    if event == "Notification" && notif_type.is_empty() {
+        return Ok(None);
+    }
+
     if is_generic_claude_message(&message) {
         message.clear();
     }
@@ -473,7 +477,10 @@ fn set_terminal_title(title: &str) {
     let Ok(mut tty) = std::fs::OpenOptions::new().write(true).open("/dev/tty") else {
         return;
     };
-    let safe: String = title.chars().filter(|c| *c != '\x07' && *c != '\x1b').collect();
+    let safe: String = title
+        .chars()
+        .filter(|c| *c != '\x07' && *c != '\x1b')
+        .collect();
     let _ = write!(tty, "\x1b]0;{safe}\x1b\\");
     let _ = tty.flush();
 }
