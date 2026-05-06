@@ -65,11 +65,23 @@ TARGET="${WCT_INSTALL_DIR}/${BIN_NAME}"
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 
+IS_UPDATE=0
+if [ -x "$TARGET" ]; then
+    IS_UPDATE=1
+    log "Existing installation detected at ${TARGET} — running update."
+fi
+
 log "Downloading binary..."
 $DL "$URL" > "$TMP"
 
 if [ ! -s "$TMP" ]; then
     err "downloaded file is empty (release asset missing for ${ASSET}?)"
+fi
+
+if [ "$IS_UPDATE" = "1" ] && [ "${WCT_NO_HOOK:-0}" != "1" ]; then
+    log "Cleaning previous hook with existing binary..."
+    "$TARGET" --uninstall-hook \
+        || log "Warning: previous --uninstall-hook failed (continuing)."
 fi
 
 mv "$TMP" "$TARGET"
@@ -81,6 +93,10 @@ if [ "${WCT_NO_HOOK:-0}" = "1" ]; then
     exit 0
 fi
 
-log "Registering Claude Code hook and personal AppID..."
+if [ "$IS_UPDATE" = "1" ]; then
+    log "Re-registering Claude Code hook and personal AppID with new binary..."
+else
+    log "Registering Claude Code hook and personal AppID..."
+fi
 "$TARGET" --install-hook
 log "Done."
