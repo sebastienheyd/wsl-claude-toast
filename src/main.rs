@@ -429,11 +429,7 @@ fn parse_hook_input() -> Result<Option<HookPayload>, String> {
     } else if event == "Stop" {
         (t("toast.stop.title"), "stop", t("toast.stop.default_msg"))
     } else {
-        (
-            t("toast.default.title"),
-            "default",
-            t("toast.default.default_msg"),
-        )
+        return Ok(None);
     };
 
     if message.is_empty() {

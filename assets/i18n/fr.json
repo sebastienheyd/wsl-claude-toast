@@ -1,10 +1,8 @@
 {
   "toast.permission.title": "Autorisation requise",
   "toast.stop.title": "Terminé",
-  "toast.default.title": "Claude Code",
   "toast.permission.default_msg": "Claude Code demande une autorisation",
   "toast.stop.default_msg": "Claude Code a terminé",
-  "toast.default.default_msg": "En attente de réponse",
   "toast.question.title": "Question",
   "toast.question.default_msg": "Claude Code attend votre réponse",
   "cli.appid.registering": "Enregistrement de l'AppID personnel ({appId}) — patientez ~5 s...",
